@@ -1,5 +1,7 @@
 package search
 
+import "strings"
+
 // Filter narrows candidates. The zero value means no filtering.
 type Filter struct {
 	Project        string // exact match on chunks.project
@@ -9,5 +11,26 @@ type Filter struct {
 }
 
 // FilterSQL returns a clause to append to a WHERE (leading " AND ...", or "") and its args.
-// Stub: applies nothing until the "filters" ticket.
-func FilterSQL(f Filter) (string, []any) { return "", nil }
+func FilterSQL(f Filter) (string, []any) {
+	var (
+		sb   strings.Builder
+		args []any
+	)
+	add := func(cond string, v any) {
+		sb.WriteString(cond)
+		args = append(args, v)
+	}
+	if f.Project != "" {
+		add(" AND c.project = ?", f.Project)
+	}
+	if f.Agent != "" {
+		add(" AND c.agent = ?", f.Agent)
+	}
+	if f.SinceMS > 0 {
+		add(" AND c.ts >= ?", f.SinceMS)
+	}
+	if f.ExcludeSession != "" {
+		add(" AND c.session_id != ?", f.ExcludeSession)
+	}
+	return sb.String(), args
+}
