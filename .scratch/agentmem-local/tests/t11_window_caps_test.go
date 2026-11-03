@@ -25,5 +25,7 @@ func TestT11_ToolResultCaps(t *testing.T) {
 
 func TestT11_ShortResultUncapped(t *testing.T) {
 	c := parsed(t, "claude", "chunks", "claude/s1.jsonl")
-	eq(t, "text", c[2]["text"], "FAIL: TestFoo")
+	// chunk 2 is the tool_call; its tool_result is chunk 3 (13 bytes, under the 640 threshold).
+	eq(t, "uncapped role", c[3]["role"], "tool_result")
+	eq(t, "uncapped text", c[3]["text"], "FAIL: TestFoo")
 }
