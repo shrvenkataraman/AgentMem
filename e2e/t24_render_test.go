@@ -21,7 +21,7 @@ func entryHeaders(out string) []string {
 
 func TestT24_RenderFormat(t *testing.T) {
 	st := corpusState(t)
-	out := ok(t, st, nil, "ask", "ERR_FOO_BAR", "build")
+	out := ok(t, st, nil, "ask", "--no-dedup", "ERR_FOO_BAR", "build")
 	eq(t, "first line", strings.SplitN(out, "\n", 2)[0], hdr)
 	hs := entryHeaders(out)
 	eq(t, "entries", len(hs), 8)
