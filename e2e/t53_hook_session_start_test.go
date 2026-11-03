@@ -12,6 +12,9 @@ import (
 func spoolFile(t *testing.T, state, sid, body string) string {
 	t.Helper()
 	p := filepath.Join(state, "spool", sid+".md")
+	if err := os.MkdirAll(filepath.Dir(p), 0o700); err != nil {
+		t.Fatal(err)
+	}
 	writeFile(t, p, body)
 	return p
 }
