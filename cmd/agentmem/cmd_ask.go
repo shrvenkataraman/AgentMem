@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"agentmem/internal/ingest"
 	"agentmem/internal/search"
 )
 
@@ -23,6 +24,8 @@ type askOpts struct {
 	json           bool   // --json: print one machine-readable object instead of the rendering
 
 	noDedup bool // --no-dedup: do not collapse identical chunks from different sessions
+
+	noRefresh bool // --no-refresh: do not ingest new transcript lines before answering
 }
 
 // parseAsk parses ask args by hand: the query itself may start with `--`, so package flag is not
@@ -63,6 +66,8 @@ func parseAsk(args []string) (o askOpts, err error) {
 			o.json = true
 		case "--no-dedup":
 			o.noDedup = true
+		case "--no-refresh":
+			o.noRefresh = true
 		case "--limit", "--budget":
 			name := args[i]
 			if i+1 < len(args) {
@@ -105,6 +110,11 @@ func cmdAsk(args []string) int {
 		return 1
 	}
 	defer db.Close()
+	if !o.noRefresh {
+		if _, err := ingest.IngestAll(db); err != nil {
+			fmt.Fprintln(os.Stderr, "ask: refresh:", err)
+		}
+	}
 	if !o.includeCurrent {
 		o.filter.ExcludeSession = search.CurrentSession(db, o.session)
 	}
