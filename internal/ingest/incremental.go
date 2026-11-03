@@ -129,6 +129,9 @@ func IngestJSONL(db *sql.DB, storeName, path string) (inserted, skipped int, err
 	if err := store.SetCursor(db, storeName, path, fmt.Sprintf("%d:%d", newOff, nextLine+len(lines))); err != nil {
 		return inserted, skipped, err
 	}
+	if err := store.AddSkipped(db, storeName, path, skipped); err != nil {
+		return inserted, skipped, err
+	}
 	return inserted, skipped, nil
 }
 

@@ -19,3 +19,28 @@ func SetCursor(db *sql.DB, store, key, cursor string) error {
 ON CONFLICT(store,key) DO UPDATE SET cursor=excluded.cursor`, store, key, cursor)
 	return err
 }
+
+// AddSkipped adds n to the skipped counter of the (store, key) cursor row.
+func AddSkipped(db *sql.DB, store, key string, n int) error {
+	_, err := db.Exec(`UPDATE cursors SET skipped = skipped + ? WHERE store=? AND key=?`, n, store, key)
+	return err
+}
+
+// SkippedByStore returns the total skipped lines per store, omitting stores with zero.
+func SkippedByStore(db *sql.DB) map[string]int {
+	res := map[string]int{}
+	rows, err := db.Query("SELECT store, sum(skipped) FROM cursors WHERE skipped > 0 GROUP BY store")
+	if err != nil {
+		return res
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var s string
+		var n int
+		if err := rows.Scan(&s, &n); err != nil {
+			return res
+		}
+		res[s] = n
+	}
+	return res
+}
