@@ -11,6 +11,9 @@ import (
 
 const maxWindow = 2560
 
+// truncMarker separates the kept head and tail of a capped tool_result (19 bytes).
+const truncMarker = "\n[...truncated...]\n"
+
 // Window splits msgs into chunks (windows of about 2560 bytes at paragraph boundaries) and caps
 // tool_result text. ContentHash is hex sha256 of the chunk text.
 func Window(msgs []model.Message) []model.Chunk {
@@ -18,6 +21,9 @@ func Window(msgs []model.Message) []model.Chunk {
 	for _, m := range msgs {
 		if m.Text == "" {
 			continue
+		}
+		if m.Role == "tool_result" {
+			m.Text = capToolResult(m.Text, m.IsError)
 		}
 		base := len(out) // WindowIdx counts from 0 per message.
 		window := ""
@@ -51,6 +57,28 @@ func Window(msgs []model.Message) []model.Chunk {
 		}
 	}
 	return out
+}
+
+// capToolResult keeps the head and tail of long tool_result text, cutting on rune boundaries: the
+// head cut moves back, the tail start moves forward. Text at or below the threshold is returned
+// unchanged.
+func capToolResult(text string, isError bool) string {
+	max, head, tail := 640, 512, 128
+	if isError {
+		max, head, tail = 2512, 2000, 512
+	}
+	if len(text) <= max {
+		return text
+	}
+	n := head
+	for n > 0 && !utf8.RuneStart(text[n]) {
+		n--
+	}
+	k := len(text) - tail
+	for k < len(text) && !utf8.RuneStart(text[k]) {
+		k++
+	}
+	return text[:n] + truncMarker + text[k:]
 }
 
 // chunk builds a stored row from message m whose text is the window text.
