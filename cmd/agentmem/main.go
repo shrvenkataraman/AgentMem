@@ -19,6 +19,7 @@ var commands = map[string]func(args []string) int{
 	"tune-prefetch": cmdTunePrefetch,
 	"audit":         cmdAudit,
 	"install-rules": cmdInstallRules,
+	"install-hooks": cmdInstallHooks,
 	"project":       cmdProject,
 	"hook":          cmdHook,
 }
