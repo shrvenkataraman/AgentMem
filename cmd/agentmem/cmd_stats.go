@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+
+	"agentmem/internal/store"
 )
 
 // cmdStats: agentmem stats [--json] prints index stats as JSON or text.
@@ -66,6 +68,7 @@ func cmdStats(args []string) int {
 		"chunks":         chunks,
 		"sessions":       sessions,
 		"by_agent":       byAgent,
+		"skipped_lines":  store.SkippedByStore(db),
 	})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "agentmem stats:", err)
