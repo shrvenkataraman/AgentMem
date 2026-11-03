@@ -168,6 +168,15 @@ func cmdAsk(args []string) int {
 	if !o.noDedup {
 		hits = search.Collapse(hits)
 	}
+	// The answered set is truncated here, before logging: tickets 28 and 34 define the log's
+	// Hits and SourcesReturned over the hits actually returned, not the full collapsed set.
+	// Clamping a negative limit first matches the JSON path, which Render does not.
+	if o.limit < 0 {
+		o.limit = 0
+	}
+	if len(hits) > o.limit {
+		hits = hits[:o.limit]
+	}
 	logQuery(o, hits)
 	if o.json {
 		printJSON(o.query(), hits, o.limit, o.filter.ExcludeSession, stale)

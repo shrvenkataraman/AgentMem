@@ -47,3 +47,22 @@ func TestT34_QueryLogRotates(t *testing.T) {
 	b, _ := os.ReadFile(st + "/query-log.jsonl")
 	eq(t, "current file has the newest entry only", len(strings.Split(strings.TrimSpace(string(b)), "\n")), 1)
 }
+
+// TestT34_QueryLogHonoursLimit pins the review-gate fix: Hits and SourcesReturned describe the
+// hits actually returned, so --limit truncates them, and a negative limit answers empty (exit 0)
+// instead of panicking the render path.
+func TestT34_QueryLogHonoursLimit(t *testing.T) {
+	st := corpusState(t)
+	ok(t, st, []string{"AGENTMEM_AGENT=claude"}, "ask", "--include-current", "--limit", "1", "ERR_FOO_BAR")
+	b, err := os.ReadFile(st + "/query-log.jsonl")
+	if err != nil {
+		t.Fatal(err)
+	}
+	e := jsonLines(t, string(b))
+	eq(t, "entries", len(e), 1)
+	eq(t, "hits follows --limit", e[0]["hits"], 1)
+	eq(t, "sources len", len(e[0]["sources_returned"].([]any)), 1)
+	_, errOut, rc := runEnv(t, st, nil, "ask", "--include-current", "--limit", "-1", "ERR_FOO_BAR")
+	eq(t, "negative limit exit", rc, 0)
+	lacks(t, errOut, "panic")
+}
