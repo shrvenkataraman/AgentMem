@@ -1,0 +1,13 @@
+CREATE TABLE sessions (id TEXT PRIMARY KEY, source TEXT NOT NULL, cwd TEXT, git_repo_root TEXT, started_at REAL NOT NULL);
+CREATE TABLE messages (id INTEGER PRIMARY KEY AUTOINCREMENT, session_id TEXT NOT NULL, role TEXT NOT NULL, content TEXT, tool_call_id TEXT, tool_calls TEXT, tool_name TEXT, timestamp REAL NOT NULL, _compressed_summary INTEGER NOT NULL DEFAULT 0, active INTEGER NOT NULL DEFAULT 1, compacted INTEGER NOT NULL DEFAULT 0);
+INSERT INTO sessions VALUES ('h1','cli','/home/u/Work/proj',NULL,1790000000.0);
+INSERT INTO sessions VALUES ('h2','subagent','/home/u/Work/proj',NULL,1790000100.0);
+INSERT INTO messages (session_id,role,content,timestamp) VALUES ('h1','user','deploy the app',1790000000.5);
+INSERT INTO messages (session_id,role,content,tool_calls,timestamp) VALUES ('h1','assistant','Running deploy.','[{"id":"c1","type":"function","function":{"name":"terminal","arguments":"{\"command\": \"make deploy\"}"}}]',1790000001.0);
+INSERT INTO messages (session_id,role,content,tool_call_id,tool_name,timestamp) VALUES ('h1','tool','{"error": "make: *** No rule"}','c1','terminal',1790000002.0);
+INSERT INTO messages (session_id,role,content,tool_calls,timestamp) VALUES ('h1','assistant','','[{"id":"c2","type":"function","function":{"name":"terminal","arguments":"{\"command\": \"agentmem ask foo\"}"}}]',1790000003.0);
+INSERT INTO messages (session_id,role,content,tool_call_id,tool_name,timestamp) VALUES ('h1','tool','poison','c2','terminal',1790000004.0);
+INSERT INTO messages (session_id,role,content,timestamp) VALUES ('h1','session_meta','{"meta":1}',1790000005.0);
+INSERT INTO messages (session_id,role,content,timestamp,_compressed_summary) VALUES ('h1','assistant','old summary',1790000006.0,1);
+INSERT INTO messages (session_id,role,content,timestamp,active,compacted) VALUES ('h1','user','compacted msg',1790000007.0,0,1);
+INSERT INTO messages (session_id,role,content,timestamp) VALUES ('h2','assistant','sub work',1790000101.0);

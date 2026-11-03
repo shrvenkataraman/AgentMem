@@ -1,0 +1,3 @@
+{"type": "user", "uuid": "dup-1-1", "sessionId": "dup-1", "timestamp": "2026-10-01T09:00:00.000Z", "cwd": "/home/u/Work/proj", "isSidechain": false, "message": {"role": "user", "content": "dup note 1"}}
+{"type": "assistant", "uuid": "dup-1-2", "sessionId": "dup-1", "timestamp": "2026-10-01T09:00:01.000Z", "cwd": "/home/u/Work/proj", "isSidechain": false, "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "t1", "name": "Bash", "input": {"command": "run it"}}]}}
+{"type": "user", "uuid": "dup-1-3", "sessionId": "dup-1", "timestamp": "2026-10-01T09:00:02.000Z", "cwd": "/home/u/Work/proj", "isSidechain": false, "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "t1", "content": "Error: ERR_DUP_X failed", "is_error": true}]}}

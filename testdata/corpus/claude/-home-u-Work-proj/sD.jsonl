@@ -1,0 +1,1 @@
+{"type": "user", "uuid": "sc-d-1", "sessionId": "sc-d", "timestamp": "2026-10-04T09:00:00.000Z", "cwd": "/home/u/Work/proj", "isSidechain": false, "message": {"role": "user", "content": "current session talks about ERR_FOO_BAR too"}}

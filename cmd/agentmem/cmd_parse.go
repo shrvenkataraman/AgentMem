@@ -41,7 +41,8 @@ func cmdParse(args []string) int {
 			}
 		}
 	case "hermes":
-		m, _, err := ingest.ParseHermes(path, 0)
+		m, maxID, err := ingest.ParseHermes(path, 0)
+		fmt.Fprintf(os.Stderr, "max_id=%d\n", maxID)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			return 1
@@ -53,7 +54,7 @@ func cmdParse(args []string) int {
 	}
 	enc := json.NewEncoder(os.Stdout)
 	if *stage != "raw" {
-		msgs = ingest.DropSelfPoison(msgs)
+		msgs = ingest.DropSelfPoison(msgs, nil)
 	}
 	if *stage == "redacted" || *stage == "chunks" {
 		for i := range msgs {

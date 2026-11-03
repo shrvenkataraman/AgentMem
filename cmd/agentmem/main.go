@@ -7,7 +7,19 @@ import (
 
 // commands maps a subcommand name to its implementation. Each lives in its own cmd_<name>.go.
 var commands = map[string]func(args []string) int{
-	"parse": cmdParse,
+	"parse":         cmdParse,
+	"ingest":        cmdIngest,
+	"ask":           cmdAsk,
+	"show":          cmdShow,
+	"stats":         cmdStats,
+	"rebuild":       cmdRebuild,
+	"handoff":       cmdHandoff,
+	"digest":        cmdDigest,
+	"prefetch":      cmdPrefetch,
+	"tune-prefetch": cmdTunePrefetch,
+	"audit":         cmdAudit,
+	"install-rules": cmdInstallRules,
+	"project":       cmdProject,
 }
 
 func main() {

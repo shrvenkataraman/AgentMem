@@ -3,8 +3,8 @@ package model
 
 // Message is one normalized unit of transcript content (one text block, one tool call, or one tool result).
 type Message struct {
-	Agent       string `json:"agent"`        // claude | pi | hermes
-	SourceStore string `json:"source_store"` // claude | pi | hermes
+	Agent       string `json:"agent"`        // claude | pi | hermes/<session source>
+	SourceStore string `json:"source_store"` // claude | pi | hermes/<session source>
 	SessionID   string `json:"session_id"`
 	SourcePath  string `json:"source_path"`
 	SourceRef   string `json:"source_ref"` // "<line or row id>#<block index>"
