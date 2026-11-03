@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"agentmem/internal/ingest"
-	"agentmem/internal/model"
 	"agentmem/internal/store"
 )
 
@@ -29,41 +28,29 @@ func cmdIngest(args []string) int {
 	}
 	defer db.Close()
 
-	var msgs []model.Message
 	switch *srcStore {
 	case "claude", "pi":
-		lines, _, err := ingest.ReadLines(*path, 0, 1)
+		n, _, err := ingest.IngestJSONL(db, *srcStore, *path)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			return 1
 		}
-		pp := &ingest.PiParser{Path: *path}
-		for _, l := range lines {
-			if *srcStore == "claude" {
-				m, _ := ingest.ParseClaudeLine(*path, l)
-				msgs = append(msgs, m...)
-			} else {
-				m, _ := pp.ParseLine(l)
-				msgs = append(msgs, m...)
-			}
-		}
+		fmt.Printf("inserted=%d\n", n)
 	case "hermes":
 		m, _, err := ingest.ParseHermes(*path, 0)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			return 1
 		}
-		msgs = m
+		n, err := store.Upsert(db, ingest.Process(m, nil))
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 1
+		}
+		fmt.Printf("inserted=%d\n", n)
 	default:
 		fmt.Fprintln(os.Stderr, "unknown --store")
 		return 2
 	}
-
-	n, err := store.Upsert(db, ingest.Process(msgs, nil))
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return 1
-	}
-	fmt.Printf("inserted=%d\n", n)
 	return 0
 }
