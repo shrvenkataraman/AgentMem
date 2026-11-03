@@ -39,6 +39,9 @@ func cmdHook(args []string) int {
 			fmt.Fprintln(os.Stderr, "agentmem hook:", err)
 		}
 		return 0
+	case "session-start":
+		deliverSpool(p.SessionID, "SessionStart")
+		return 0
 	}
 	fmt.Fprintf(os.Stderr, "agentmem hook: unknown hook %q\n", args[0])
 	return 2
