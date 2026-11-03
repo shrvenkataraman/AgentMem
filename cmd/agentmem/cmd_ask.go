@@ -20,6 +20,7 @@ type askOpts struct {
 
 	session        string // --session S: the session to treat as the current one
 	includeCurrent bool   // --include-current: do not exclude the current session
+	json           bool   // --json: print one machine-readable object instead of the rendering
 }
 
 // parseAsk parses ask args by hand: the query itself may start with `--`, so package flag is not
@@ -56,6 +57,8 @@ func parseAsk(args []string) (o askOpts, err error) {
 			}
 		case "--include-current":
 			o.includeCurrent = true
+		case "--json":
+			o.json = true
 		case "--limit", "--budget":
 			name := args[i]
 			if i+1 < len(args) {
@@ -105,6 +108,10 @@ func cmdAsk(args []string) int {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "agentmem ask:", err)
 		return 1
+	}
+	if o.json {
+		printJSON(o.query(), hits, o.limit, o.filter.ExcludeSession, false)
+		return 0
 	}
 	if !o.raw {
 		fmt.Print(search.Render(hits, o.limit, o.budget))
