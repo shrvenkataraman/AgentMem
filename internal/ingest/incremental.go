@@ -2,14 +2,52 @@ package ingest
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 
 	"agentmem/internal/model"
 	"agentmem/internal/store"
 )
+
+// poisonStore is the cursor store name under which the self-poison pairing keys are carried
+// across runs.
+const poisonStore = "poison"
+
+// LoadKnown returns the poison pairing keys persisted for key. An absent or malformed cursor
+// yields an empty map.
+func LoadKnown(db *sql.DB, key string) map[string]bool {
+	known := map[string]bool{}
+	c, ok := store.GetCursor(db, poisonStore, key)
+	if !ok {
+		return known
+	}
+	var keys []string
+	if err := json.Unmarshal([]byte(c), &keys); err != nil {
+		return known
+	}
+	for _, k := range keys {
+		known[k] = true
+	}
+	return known
+}
+
+// SaveKnown persists the poison pairing keys for key as a JSON array of sorted keys.
+func SaveKnown(db *sql.DB, key string, known map[string]bool) error {
+	keys := make([]string, 0, len(known))
+	for k := range known {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	b, err := json.Marshal(keys)
+	if err != nil {
+		return err
+	}
+	return store.SetCursor(db, poisonStore, key, string(b))
+}
 
 // parseCursor splits "<byteOffset>:<nextLineNo>". An invalid value falls back to the default "0:1".
 func parseCursor(s string) (int64, int) {
@@ -78,10 +116,15 @@ func IngestJSONL(db *sql.DB, storeName, path string) (inserted, skipped int, err
 		return 0, 0, fmt.Errorf("unknown store %q", storeName)
 	}
 
-	known := map[string]bool{}
+	known := LoadKnown(db, path)
 	inserted, err = store.Upsert(db, Process(msgs, known))
 	if err != nil {
 		return 0, skipped, err
+	}
+	if len(known) > 0 {
+		if err := SaveKnown(db, path, known); err != nil {
+			return inserted, skipped, err
+		}
 	}
 	if err := store.SetCursor(db, storeName, path, fmt.Sprintf("%d:%d", newOff, nextLine+len(lines))); err != nil {
 		return inserted, skipped, err
