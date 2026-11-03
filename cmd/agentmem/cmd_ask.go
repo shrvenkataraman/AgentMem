@@ -9,6 +9,7 @@ import (
 
 	"agentmem/internal/ingest"
 	"agentmem/internal/search"
+	"agentmem/internal/store"
 )
 
 // askOpts is the parsed `ask` command line.
@@ -110,9 +111,16 @@ func cmdAsk(args []string) int {
 		return 1
 	}
 	defer db.Close()
+	stale := false
 	if !o.noRefresh {
-		if _, err := ingest.IngestAll(db); err != nil {
-			fmt.Fprintln(os.Stderr, "ask: refresh:", err)
+		if unlock, ok := store.TryLock(store.StateDir(), store.LockWait()); ok {
+			defer unlock()
+			if _, err := ingest.IngestAll(db); err != nil {
+				fmt.Fprintln(os.Stderr, "ask: refresh:", err)
+			}
+		} else {
+			// Another ingest holds the lock: answer from the index as it stands.
+			stale = true
 		}
 	}
 	if !o.includeCurrent {
@@ -127,7 +135,7 @@ func cmdAsk(args []string) int {
 		hits = search.Collapse(hits)
 	}
 	if o.json {
-		printJSON(o.query(), hits, o.limit, o.filter.ExcludeSession, false)
+		printJSON(o.query(), hits, o.limit, o.filter.ExcludeSession, stale)
 		return 0
 	}
 	if !o.raw {
