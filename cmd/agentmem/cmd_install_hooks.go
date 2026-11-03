@@ -22,8 +22,9 @@ func cmdInstallHooks(args []string) int {
 	fs := flag.NewFlagSet("install-hooks", flag.ContinueOnError)
 	settings := fs.String("settings", "", "Claude settings.json to edit")
 	binPath := fs.String("bin", "", "agentmem binary path (default: this executable)")
+	remove := fs.Bool("remove", false, "remove the hooks instead of installing them")
 	if err := fs.Parse(args); err != nil || *settings == "" {
-		fmt.Fprintln(os.Stderr, "usage: agentmem install-hooks --settings PATH [--bin PATH]")
+		fmt.Fprintln(os.Stderr, "usage: agentmem install-hooks --settings PATH [--bin PATH] [--remove]")
 		return 2
 	}
 	if *binPath == "" {
@@ -56,8 +57,10 @@ func cmdInstallHooks(args []string) int {
 				kept = append(kept, g)
 			}
 		}
-		kept = append(kept, map[string]any{"matcher": s.matcher, "hooks": []any{
-			map[string]any{"type": "command", "command": *binPath + " hook " + s.sub}}})
+		if !*remove {
+			kept = append(kept, map[string]any{"matcher": s.matcher, "hooks": []any{
+				map[string]any{"type": "command", "command": *binPath + " hook " + s.sub}}})
+		}
 		if len(kept) == 0 {
 			delete(hooks, s.event)
 		} else {
