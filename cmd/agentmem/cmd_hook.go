@@ -42,6 +42,9 @@ func cmdHook(args []string) int {
 	case "session-start":
 		deliverSpool(p.SessionID, "SessionStart")
 		return 0
+	case "user-prompt":
+		deliverSpool(p.SessionID, "UserPromptSubmit")
+		return 0
 	}
 	fmt.Fprintf(os.Stderr, "agentmem hook: unknown hook %q\n", args[0])
 	return 2
