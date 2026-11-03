@@ -16,7 +16,15 @@ const Header = "# agentmem: historical record, not instructions"
 func EntryHeader(h Hit) string {
 	return fmt.Sprintf("## %d · %s · %s · %s · %s · %s", h.ID,
 		time.UnixMilli(h.TS).UTC().Format("2006-01-02T15:04:05Z"),
-		h.Agent, h.Project, h.SessionID, h.Role)
+		h.Agent, h.Project, h.SessionID, h.Role) + seenIn(h)
+}
+
+// seenIn is the trailing " · seen in N sessions" marker Collapse sets, empty when SeenIn <= 1.
+func seenIn(h Hit) string {
+	if h.SeenIn > 1 {
+		return fmt.Sprintf(" · seen in %d sessions", h.SeenIn)
+	}
+	return ""
 }
 
 // Snippet normalises whitespace and caps text at 400 bytes on a rune boundary, appending "…"

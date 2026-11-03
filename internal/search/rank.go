@@ -6,6 +6,41 @@ import (
 	"strings"
 )
 
+// Collapse removes chunks whose ContentHash repeats, so identical text from several sessions is
+// shown once. In each group the kept member is the one with the smallest TS (ties broken by the
+// smallest ID); it takes the position of the group's first (best ranked) member, and SeenIn is set
+// to the number of distinct SessionID values in the group.
+func Collapse(hits []Hit) []Hit {
+	type group struct {
+		first    int
+		best     int
+		sessions map[string]bool
+	}
+	groups := make(map[string]*group, len(hits))
+	for i, h := range hits {
+		g := groups[h.ContentHash]
+		if g == nil {
+			g = &group{first: i, best: i, sessions: map[string]bool{}}
+			groups[h.ContentHash] = g
+		}
+		g.sessions[h.SessionID] = true
+		if h.TS < hits[g.best].TS || (h.TS == hits[g.best].TS && h.ID < hits[g.best].ID) {
+			g.best = i
+		}
+	}
+	out := make([]Hit, 0, len(hits))
+	for i, h := range hits {
+		g := groups[h.ContentHash]
+		if g.first != i {
+			continue
+		}
+		keep := hits[g.best]
+		keep.SeenIn = len(g.sessions)
+		out = append(out, keep)
+	}
+	return out
+}
+
 // Query runs q against the index and returns the reranked hits.
 func Query(db *sql.DB, q string, f Filter) ([]Hit, error) {
 	terms := Terms(q)
