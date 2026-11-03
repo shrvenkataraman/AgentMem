@@ -16,8 +16,8 @@ func cmdIngest(args []string) int {
 	fs := flag.NewFlagSet("ingest", flag.ContinueOnError)
 	path := fs.String("file", "", "transcript file")
 	srcStore := fs.String("store", "", "claude|pi|hermes")
-	if err := fs.Parse(args); err != nil || *path == "" || *srcStore == "" {
-		fmt.Fprintln(os.Stderr, "usage: agentmem ingest --file F --store claude|pi|hermes")
+	if err := fs.Parse(args); err != nil {
+		fmt.Fprintln(os.Stderr, "usage: agentmem ingest [--file F --store claude|pi|hermes]")
 		return 2
 	}
 
@@ -27,6 +27,20 @@ func cmdIngest(args []string) int {
 		return 1
 	}
 	defer db.Close()
+
+	if *path == "" && *srcStore == "" {
+		r, err := ingest.IngestAll(db)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 1
+		}
+		fmt.Printf("files=%d inserted=%d skipped=%d\n", r.Files, r.Inserted, r.Skipped)
+		return 0
+	}
+	if *path == "" || *srcStore == "" {
+		fmt.Fprintln(os.Stderr, "usage: agentmem ingest --file F --store claude|pi|hermes")
+		return 2
+	}
 
 	switch *srcStore {
 	case "claude", "pi":
