@@ -21,7 +21,7 @@ func cmdRebuild(args []string) int {
 		return 2
 	}
 
-	release, err := store.TryLock(store.StateDir())
+	release, err := store.TryIngestLock(store.StateDir())
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1

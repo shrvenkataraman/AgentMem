@@ -149,10 +149,12 @@ func Rebuild(dir string, force bool, build func(db *sql.DB) error) (oldN, newN i
 	return oldN, newN, true, nil
 }
 
-// TryLock takes the non-blocking ingest lock for dir (dir/ingest.lock, an exclusive flock). The
-// returned release unlocks and closes the file. It errors with "ingest lock busy" when another
-// process holds it.
-func TryLock(dir string) (release func(), err error) {
+// TryIngestLock takes the non-blocking ingest lock for dir (dir/ingest.lock, an exclusive flock).
+// The returned release unlocks and closes the file. It errors with "ingest lock busy" when another
+// process holds it. The name is deliberately not TryLock: ticket 31 owns the exported
+// store.TryLock(dir, wait) in internal/store/lock.go, and two declarations of that name in one
+// package would not compile (PROGRESS.md defect I).
+func TryIngestLock(dir string) (release func(), err error) {
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return nil, err
 	}
