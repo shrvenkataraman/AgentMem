@@ -4,10 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
 	"agentmem/internal/ingest"
+	"agentmem/internal/querylog"
 	"agentmem/internal/search"
 	"agentmem/internal/store"
 )
@@ -89,6 +91,38 @@ func parseAsk(args []string) (o askOpts, err error) {
 	return o, nil
 }
 
+// logQuery records this answered question in the private query log. The agent is AGENTMEM_AGENT
+// (or "unknown"), the project is the normalized cwd, sources are the distinct agents of the
+// returned hits (never nil, so an empty result set logs []).
+func logQuery(o askOpts, hits []search.Hit) {
+	agent := os.Getenv("AGENTMEM_AGENT")
+	if agent == "" {
+		agent = "unknown"
+	}
+	cwd := os.Getenv("AGENTMEM_CWD")
+	if cwd == "" {
+		cwd, _ = os.Getwd()
+	}
+	seen := map[string]bool{}
+	sources := make([]string, 0, len(hits))
+	for _, h := range hits {
+		if !seen[h.Agent] {
+			seen[h.Agent] = true
+			sources = append(sources, h.Agent)
+		}
+	}
+	sort.Strings(sources)
+	querylog.Append(store.StateDir(), querylog.Entry{
+		TS:              time.Now().UTC().Format(time.RFC3339),
+		Agent:           agent,
+		Project:         ingest.NormalizeProject(cwd),
+		Query:           o.query(),
+		Hits:            len(hits),
+		ZeroResult:      len(hits) == 0,
+		SourcesReturned: sources,
+	})
+}
+
 // Defaults for the rendered output size.
 const (
 	defaultAskLimit  = 8
@@ -134,6 +168,7 @@ func cmdAsk(args []string) int {
 	if !o.noDedup {
 		hits = search.Collapse(hits)
 	}
+	logQuery(o, hits)
 	if o.json {
 		printJSON(o.query(), hits, o.limit, o.filter.ExcludeSession, stale)
 		return 0
