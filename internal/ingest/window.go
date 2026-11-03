@@ -74,11 +74,33 @@ func capToolResult(text string, isError bool) string {
 	for n > 0 && !utf8.RuneStart(text[n]) {
 		n--
 	}
+	if i := openMarker(text[:n]); i >= 0 {
+		n = i
+	}
 	k := len(text) - tail
 	for k < len(text) && !utf8.RuneStart(text[k]) {
 		k++
 	}
+	if openMarker(text[:k]) >= 0 {
+		if j := strings.Index(text[k:], "]"); j >= 0 {
+			k += j + 1
+		}
+	}
 	return text[:n] + truncMarker + text[k:]
+}
+
+// openMarker returns the index where an unterminated "[REDACTED:..." marker (possibly cut short)
+// starts at the end of s, or -1 when s does not end inside one.
+func openMarker(s string) int {
+	i := strings.LastIndex(s, "[")
+	if i < 0 {
+		return -1
+	}
+	seg := s[i:]
+	if strings.Contains(seg, "]") || !(strings.HasPrefix(seg, "[REDACTED:") || strings.HasPrefix("[REDACTED:", seg)) {
+		return -1
+	}
+	return i
 }
 
 // chunk builds a stored row from message m whose text is the window text.
