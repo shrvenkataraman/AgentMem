@@ -13,7 +13,7 @@ var rules = []rule{
 	{regexp.MustCompile(`\bgh[pousr]_[A-Za-z0-9]{36}\b`), "[REDACTED:github]"},
 	{regexp.MustCompile(`\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b`), "[REDACTED:jwt]"},
 	{regexp.MustCompile(`(?s)-----BEGIN [A-Z ]*PRIVATE KEY-----.*?-----END [A-Z ]*PRIVATE KEY-----`), "[REDACTED:private-key]"},
-	{regexp.MustCompile(`(?i)\b([A-Z0-9_]*(?:TOKEN|SECRET|PASSWORD|PASSWD|API_?KEY|PRIVATE_?KEY)[A-Z0-9_]*)=([^\s'"]+)`), "${1}=[REDACTED:secret]"},
+	{regexp.MustCompile(`(?i)\b([A-Z0-9_]*(?:TOKEN|SECRET|PASSWORD|PASSWD|API_?KEY|PRIVATE_?KEY)[A-Z0-9_]*)=("[^"]*"|'[^']*'|[^\s'"]+)`), "${1}=[REDACTED:secret]"},
 }
 
 // Text returns s with every secret-shaped substring replaced by "[REDACTED:<kind>]".
