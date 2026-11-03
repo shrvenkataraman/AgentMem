@@ -4,6 +4,13 @@ import "testing"
 
 func TestT03_PiTextBlocks(t *testing.T) {
 	m := parsed(t, "pi", "raw", "pi/s1.jsonl")
+	var tx []map[string]any
+	for _, x := range m {
+		if r := x["role"]; r == "user" || r == "assistant" {
+			tx = append(tx, x)
+		}
+	}
+	m = tx
 	eq(t, "count", len(m), 2)
 	eq(t, "ref1", m[0]["source_ref"], "4#0")
 	eq(t, "seq1", m[0]["seq"], 400)

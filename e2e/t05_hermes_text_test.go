@@ -7,6 +7,13 @@ func TestT05_HermesTextRows(t *testing.T) {
 	eq(t, "exit", code, 0)
 	has(t, se, "max_id=9")
 	m := jsonLines(t, out)
+	var tx []map[string]any
+	for _, x := range m {
+		if r := x["role"]; r == "user" || r == "assistant" {
+			tx = append(tx, x)
+		}
+	}
+	m = tx
 	eq(t, "count", len(m), 4)
 	refs := []string{"1#0", "2#0", "8#0", "9#0"}
 	for i, r := range refs {

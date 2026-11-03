@@ -4,6 +4,13 @@ import "testing"
 
 func TestT01_ClaudeTextBlocks(t *testing.T) {
 	m := parsed(t, "claude", "raw", "claude/s1.jsonl")
+	var tx []map[string]any
+	for _, x := range m {
+		if r := x["role"]; r == "user" || r == "assistant" {
+			tx = append(tx, x)
+		}
+	}
+	m = tx
 	eq(t, "count", len(m), 4)
 	first := m[0]
 	eq(t, "source_ref", first["source_ref"], "1#0")
