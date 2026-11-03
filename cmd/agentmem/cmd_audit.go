@@ -5,6 +5,7 @@ import (
 	"math"
 	"os"
 	"regexp"
+	"strings"
 
 	"agentmem/internal/redact"
 )
@@ -69,11 +70,18 @@ func cmdAudit(args []string) int {
 // base64-ish alphabet and Shannon entropy >= 4.0 bits/char), or "" when there is none.
 func suspiciousRun(text string) string {
 	for _, run := range suspectRun.FindAllString(text, -1) {
-		if entropyBits(run) >= 4.0 {
+		if entropyBits(run) >= 4.0 && mixedClasses(run) {
 			return run
 		}
 	}
 	return ""
+}
+
+// mixedClasses reports whether s has an uppercase letter, a lowercase letter and a digit.
+func mixedClasses(s string) bool {
+	return strings.ContainsAny(s, "ABCDEFGHIJKLMNOPQRSTUVWXYZ") &&
+		strings.ContainsAny(s, "abcdefghijklmnopqrstuvwxyz") &&
+		strings.ContainsAny(s, "0123456789")
 }
 
 // entropyBits returns the Shannon entropy of s in bits per byte.
