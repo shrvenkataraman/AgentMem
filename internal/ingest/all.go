@@ -5,7 +5,10 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+
+	"agentmem/internal/store"
 )
 
 // Result summarizes an IngestAll run.
@@ -56,6 +59,32 @@ func IngestAll(db *sql.DB) (Result, error) {
 		if err := walkRoot(db, root.storeName, root.dir, &r); err != nil {
 			return r, err
 		}
+	}
+	dbf := envDir("AGENTMEM_HERMES_DB", filepath.Join(home, ".hermes", "state.db"))
+	if _, err := os.Stat(dbf); err == nil {
+		r.Files++
+		after := int64(0)
+		if c, ok := store.GetCursor(db, "hermes", dbf); ok {
+			after, _ = strconv.ParseInt(c, 10, 64)
+		}
+		msgs, maxID, err := ParseHermes(dbf, after)
+		if err != nil {
+			return r, err
+		}
+		known := LoadKnown(db, dbf)
+		ins, err := store.Upsert(db, Process(msgs, known))
+		if err != nil {
+			return r, err
+		}
+		if err := SaveKnown(db, dbf, known); err != nil {
+			return r, err
+		}
+		if maxID > after {
+			if err := store.SetCursor(db, "hermes", dbf, strconv.FormatInt(maxID, 10)); err != nil {
+				return r, err
+			}
+		}
+		r.Inserted += ins
 	}
 	return r, nil
 }
