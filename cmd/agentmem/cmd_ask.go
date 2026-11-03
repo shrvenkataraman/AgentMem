@@ -40,7 +40,7 @@ func cmdAsk(args []string) int {
 		return 1
 	}
 	defer db.Close()
-	hits, err := search.Candidates(db, search.Terms(o.query()), search.Filter{}, 512)
+	hits, err := search.Query(db, o.query(), search.Filter{})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "agentmem ask:", err)
 		return 1
@@ -49,7 +49,7 @@ func cmdAsk(args []string) int {
 		return 0 // rendering lands in a later ticket
 	}
 	for _, h := range hits {
-		fmt.Printf("%d\t%s\t0.00\n", h.ID, h.SessionID)
+		fmt.Printf("%d\t%s\t%.2f\n", h.ID, h.SessionID, h.Coverage)
 	}
 	return 0
 }
