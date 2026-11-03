@@ -29,6 +29,12 @@ func cmdIngest(args []string) int {
 	defer db.Close()
 
 	if *path == "" && *srcStore == "" {
+		unlock, ok := store.TryLock(store.StateDir(), store.LockWait())
+		if !ok {
+			fmt.Fprintln(os.Stderr, "ingest lock busy")
+			return 1
+		}
+		defer unlock()
 		r, err := ingest.IngestAll(db)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
