@@ -12,14 +12,14 @@ import (
 	"agentmem/internal/model"
 )
 
-// cmdDigest: agentmem digest --stdin [--format json]
+// cmdDigest: agentmem digest --stdin [--format text|json] (default text)
 // Reads JSON-lines model.Message from stdin and prints the extracted facts.
 func cmdDigest(args []string) int {
 	fs := flag.NewFlagSet("digest", flag.ContinueOnError)
 	stdin := fs.Bool("stdin", false, "read JSON-lines model.Message from stdin")
 	format := fs.String("format", "text", "text|json")
 	if err := fs.Parse(args); err != nil || !*stdin {
-		fmt.Fprintln(os.Stderr, "usage: agentmem digest --stdin [--format json]")
+		fmt.Fprintln(os.Stderr, "usage: agentmem digest --stdin [--format text|json]")
 		return 2
 	}
 	msgs, err := readMessages(os.Stdin)
@@ -28,17 +28,21 @@ func cmdDigest(args []string) int {
 		return 1
 	}
 	f := facts.Extract(msgs)
-	if *format != "json" {
-		fmt.Fprintln(os.Stderr, "agentmem digest: --format text is not implemented")
-		return 3
+	switch *format {
+	case "text":
+		os.Stdout.WriteString(facts.Text(f))
+		return 0
+	case "json":
+		b, err := json.Marshal(f)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 1
+		}
+		os.Stdout.Write(append(b, '\n'))
+		return 0
 	}
-	b, err := json.Marshal(f)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return 1
-	}
-	os.Stdout.Write(append(b, '\n'))
-	return 0
+	fmt.Fprintln(os.Stderr, "usage: agentmem digest --stdin [--format text|json]")
+	return 2
 }
 
 // readMessages decodes newline-delimited model.Message objects.
