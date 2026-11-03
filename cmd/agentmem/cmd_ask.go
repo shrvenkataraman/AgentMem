@@ -17,6 +17,9 @@ type askOpts struct {
 	budget int           // max bytes of rendered output
 	words  []string      // query words, in the order given
 	filter search.Filter // narrowing options (--project, --agent, --since)
+
+	session        string // --session S: the session to treat as the current one
+	includeCurrent bool   // --include-current: do not exclude the current session
 }
 
 // parseAsk parses ask args by hand: the query itself may start with `--`, so package flag is not
@@ -46,6 +49,13 @@ func parseAsk(args []string) (o askOpts, err error) {
 				o.filter.SinceMS = t.UTC().UnixMilli()
 				i++
 			}
+		case "--session":
+			if i+1 < len(args) {
+				o.session = args[i+1]
+				i++
+			}
+		case "--include-current":
+			o.includeCurrent = true
 		case "--limit", "--budget":
 			name := args[i]
 			if i+1 < len(args) {
@@ -88,6 +98,9 @@ func cmdAsk(args []string) int {
 		return 1
 	}
 	defer db.Close()
+	if !o.includeCurrent {
+		o.filter.ExcludeSession = search.CurrentSession(db, o.session)
+	}
 	hits, err := search.Query(db, o.query(), o.filter)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "agentmem ask:", err)
