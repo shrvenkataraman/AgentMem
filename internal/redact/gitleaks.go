@@ -3,6 +3,7 @@ package redact
 import (
 	_ "embed"
 	"encoding/json"
+	"math"
 	"regexp"
 	"strings"
 )
@@ -40,6 +41,27 @@ func loadGitleaks(b []byte) []glRule {
 	return out
 }
 
+// shannon is the Shannon entropy in bits per byte of s (0 for "").
+func shannon(s string) float64 {
+	if s == "" {
+		return 0
+	}
+	var counts [256]int
+	for i := 0; i < len(s); i++ {
+		counts[s[i]]++
+	}
+	n := float64(len(s))
+	var h float64
+	for _, c := range counts {
+		if c == 0 {
+			continue
+		}
+		p := float64(c) / n
+		h -= p * math.Log2(p)
+	}
+	return h
+}
+
 // applyGitleaks masks the secret span of every gitleaks rule match.
 func applyGitleaks(s string) string {
 	low := strings.ToLower(s)
@@ -63,6 +85,10 @@ func applyGitleaks(s string) string {
 				lo, hi = sub[2*g], sub[2*g+1]
 			} else if len(sub) > 2 && sub[2] >= 0 {
 				lo, hi = sub[2], sub[3]
+			}
+			secret := m[lo:hi]
+			if r.Entropy > 0 && shannon(secret) < r.Entropy {
+				return m
 			}
 			return m[:lo] + "[REDACTED:" + r.ID + "]" + m[hi:]
 		})
