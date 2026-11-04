@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"agentmem/internal/ingest"
 	"agentmem/internal/store"
@@ -24,6 +25,14 @@ func cmdForget(args []string) int {
 	}
 	if (*session == "") == (*project == "") {
 		fmt.Fprintln(os.Stderr, "usage: agentmem forget --session ID | --project PATH [--dry-run]")
+		return 2
+	}
+	if *session != "" && (strings.ContainsAny(*session, "/\\\t\n\r") || strings.Contains(*session, "..")) {
+		fmt.Fprintln(os.Stderr, "invalid id")
+		return 2
+	}
+	if *project != "" && strings.ContainsAny(*project, "\t\n\r") {
+		fmt.Fprintln(os.Stderr, "invalid id")
 		return 2
 	}
 
@@ -60,9 +69,14 @@ func cmdForget(args []string) int {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
-	if _, err := db.Exec("DELETE FROM chunks WHERE "+col+" = ?", val); err != nil {
+	res, err := db.Exec("DELETE FROM chunks WHERE "+col+" = ?", val)
+	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
+	}
+	n64, _ := res.RowsAffected()
+	if n64 == 0 {
+		fmt.Fprintln(os.Stderr, "no chunks matched; entry recorded anyway")
 	}
 	if kind == "session" {
 		os.Remove(filepath.Join(store.StateDir(), "spool", val+".md"))
@@ -75,6 +89,6 @@ func cmdForget(args []string) int {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
-	fmt.Printf("forgot=%d\n", n)
+	fmt.Printf("forgot=%d\n", n64)
 	return 0
 }

@@ -17,6 +17,9 @@ func AddForgotten(dir, kind, value string) error {
 	if kind != "session" && kind != "project" {
 		return fmt.Errorf("forgotten: unknown kind %q", kind)
 	}
+	if value == "" || strings.ContainsAny(value, "\t\n\r") {
+		return fmt.Errorf("forgotten: invalid value %q", value)
+	}
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return err
 	}
