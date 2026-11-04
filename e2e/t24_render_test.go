@@ -25,7 +25,7 @@ func TestT24_RenderFormat(t *testing.T) {
 	eq(t, "first line", strings.SplitN(out, "\n", 2)[0], hdr)
 	hs := entryHeaders(out)
 	eq(t, "entries", len(hs), 8)
-	re := regexp.MustCompile(`^## \d+ · \d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ · (claude|pi|hermes) · \S+ · \S+ · (user|assistant|tool_call|tool_result)$`)
+	re := regexp.MustCompile(`^## \d+ · \d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ · (claude|pi|hermes) · \S+ · \S+ · (user|assistant|tool_call|tool_result)(:\S+)?$`)
 	var ts []string
 	for _, h := range hs {
 		if !re.MatchString(h) {
