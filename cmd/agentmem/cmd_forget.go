@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"agentmem/internal/ingest"
 	"agentmem/internal/store"
@@ -24,6 +25,14 @@ func cmdForget(args []string) int {
 	}
 	if (*session == "") == (*project == "") {
 		fmt.Fprintln(os.Stderr, "usage: agentmem forget --session ID | --project PATH [--dry-run]")
+		return 2
+	}
+	if *session != "" && (strings.ContainsAny(*session, "/\\\t\n\r") || strings.Contains(*session, "..")) {
+		fmt.Fprintln(os.Stderr, "invalid id")
+		return 2
+	}
+	if *project != "" && strings.ContainsAny(*project, "\t\n\r") {
+		fmt.Fprintln(os.Stderr, "invalid id")
 		return 2
 	}
 
@@ -56,16 +65,55 @@ func cmdForget(args []string) int {
 	}
 	defer unlock()
 
+	var ids []string
+	if kind == "session" {
+		ids = []string{val}
+	} else {
+		rows, err := db.Query("SELECT DISTINCT session_id FROM chunks WHERE "+col+" = ?", val)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 1
+		}
+		for rows.Next() {
+			var id string
+			if err := rows.Scan(&id); err != nil {
+				rows.Close()
+				fmt.Fprintln(os.Stderr, err)
+				return 1
+			}
+			ids = append(ids, id)
+		}
+		if err := rows.Err(); err != nil {
+			rows.Close()
+			fmt.Fprintln(os.Stderr, err)
+			return 1
+		}
+		rows.Close()
+	}
+
 	if err := store.AddForgotten(store.StateDir(), kind, val); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
-	if _, err := db.Exec("DELETE FROM chunks WHERE "+col+" = ?", val); err != nil {
+	res, err := db.Exec("DELETE FROM chunks WHERE "+col+" = ?", val)
+	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
-	if kind == "session" {
-		os.Remove(filepath.Join(store.StateDir(), "spool", val+".md"))
+	n64, _ := res.RowsAffected()
+	if n64 == 0 {
+		fmt.Fprintln(os.Stderr, "no chunks matched; entry recorded anyway")
+	}
+	for _, id := range ids {
+		os.Remove(filepath.Join(store.StateDir(), "spool", id+".md")) // ignore: may not exist
+	}
+	if _, err := db.Exec("INSERT INTO chunks_fts(chunks_fts) VALUES('optimize')"); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 1
+	}
+	if _, err := db.Exec("INSERT INTO chunks_trgm(chunks_trgm) VALUES('optimize')"); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 1
 	}
 	if _, err := db.Exec("PRAGMA wal_checkpoint(TRUNCATE)"); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -75,6 +123,7 @@ func cmdForget(args []string) int {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
-	fmt.Printf("forgot=%d\n", n)
+	os.Remove(filepath.Join(store.StateDir(), "index.sqlite.bak")) // ignore: best-effort scrub
+	fmt.Printf("forgot=%d\n", n64)
 	return 0
 }

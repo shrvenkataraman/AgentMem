@@ -100,6 +100,9 @@ func keepVanished(db *sql.DB, dir string) error {
 // the swap happened. On a refused swap the candidate is removed and no .bak is made; otherwise
 // the old index is kept as index.sqlite.bak.
 func Rebuild(dir string, force bool, build func(db *sql.DB) error) (oldN, newN int, swapped bool, err error) {
+	if _, _, err := LoadForgotten(dir); err != nil {
+		return 0, 0, false, fmt.Errorf("forgotten list unreadable: %w", err)
+	}
 	old := filepath.Join(dir, "index.sqlite")
 	newPath := filepath.Join(dir, "index.new.sqlite")
 
