@@ -115,11 +115,11 @@ func cmdForget(args []string) int {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
-	if _, err := db.Exec("PRAGMA wal_checkpoint(TRUNCATE)"); err != nil {
+	if _, err := db.Exec("VACUUM"); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
-	if _, err := db.Exec("VACUUM"); err != nil {
+	if _, err := db.Exec("PRAGMA wal_checkpoint(TRUNCATE)"); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
