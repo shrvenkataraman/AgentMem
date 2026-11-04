@@ -22,6 +22,7 @@ var commands = map[string]func(args []string) int{
 	"install-hooks": cmdInstallHooks,
 	"project":       cmdProject,
 	"hook":          cmdHook,
+	"forget":        cmdForget,
 }
 
 func main() {

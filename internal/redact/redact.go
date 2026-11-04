@@ -29,5 +29,5 @@ func Text(s string) string {
 			return r.re.ReplaceAllString(m, r.want)
 		})
 	}
-	return s
+	return applyGitleaks(s)
 }
