@@ -66,7 +66,7 @@ func cmdStats(args []string) int {
 		return 0
 	}
 	b, err := json.Marshal(map[string]any{
-		"schema_version": 1,
+		"schema_version": store.SchemaVersion,
 		"chunks":         chunks,
 		"sessions":       sessions,
 		"by_agent":       byAgent,
