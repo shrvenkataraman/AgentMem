@@ -74,6 +74,19 @@ func OpenFile(path string) (*sql.DB, error) {
 			db.Close()
 			return nil, err
 		}
+		if _, err := db.Exec("INSERT INTO chunks_fts(chunks_fts) VALUES('optimize')"); err != nil {
+			db.Close()
+			return nil, err
+		}
+		if _, err := db.Exec("INSERT INTO chunks_trgm(chunks_trgm) VALUES('optimize')"); err != nil {
+			db.Close()
+			return nil, err
+		}
+		if _, err := db.Exec("PRAGMA wal_checkpoint(TRUNCATE)"); err != nil {
+			db.Close()
+			return nil, err
+		}
+		os.Remove(path + ".bak") // ignore: best-effort scrub
 	}
 	if _, err := db.Exec(fmt.Sprintf("PRAGMA user_version=%d", SchemaVersion)); err != nil {
 		db.Close()

@@ -102,6 +102,14 @@ func cmdForget(args []string) int {
 	for _, id := range ids {
 		os.Remove(filepath.Join(store.StateDir(), "spool", id+".md")) // ignore: may not exist
 	}
+	if _, err := db.Exec("INSERT INTO chunks_fts(chunks_fts) VALUES('optimize')"); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 1
+	}
+	if _, err := db.Exec("INSERT INTO chunks_trgm(chunks_trgm) VALUES('optimize')"); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 1
+	}
 	if _, err := db.Exec("PRAGMA wal_checkpoint(TRUNCATE)"); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
@@ -110,6 +118,7 @@ func cmdForget(args []string) int {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
+	os.Remove(filepath.Join(store.StateDir(), "index.sqlite.bak")) // ignore: best-effort scrub
 	fmt.Printf("forgot=%d\n", n64)
 	return 0
 }
