@@ -65,6 +65,27 @@ func cmdForget(args []string) int {
 	}
 	defer unlock()
 
+	var ids []string
+	if kind == "session" {
+		ids = []string{val}
+	} else {
+		rows, err := db.Query("SELECT DISTINCT session_id FROM chunks WHERE "+col+" = ?", val)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 1
+		}
+		for rows.Next() {
+			var id string
+			if err := rows.Scan(&id); err != nil {
+				rows.Close()
+				fmt.Fprintln(os.Stderr, err)
+				return 1
+			}
+			ids = append(ids, id)
+		}
+		rows.Close()
+	}
+
 	if err := store.AddForgotten(store.StateDir(), kind, val); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
@@ -78,8 +99,8 @@ func cmdForget(args []string) int {
 	if n64 == 0 {
 		fmt.Fprintln(os.Stderr, "no chunks matched; entry recorded anyway")
 	}
-	if kind == "session" {
-		os.Remove(filepath.Join(store.StateDir(), "spool", val+".md"))
+	for _, id := range ids {
+		os.Remove(filepath.Join(store.StateDir(), "spool", id+".md")) // ignore: may not exist
 	}
 	if _, err := db.Exec("PRAGMA wal_checkpoint(TRUNCATE)"); err != nil {
 		fmt.Fprintln(os.Stderr, err)
