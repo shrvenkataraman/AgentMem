@@ -10,7 +10,7 @@ import (
 )
 
 // ErrNeedsRebuild is returned by Open/OpenFile when the index on disk cannot be used: its schema
-// version is unknown (PRAGMA user_version is neither 0 nor 1) or the file is corrupt ("file is not
+// version is newer than SchemaVersion or the file is corrupt ("file is not
 // a database" / "malformed"). Callers rebuild from the sources.
 var ErrNeedsRebuild = errors.New("index needs rebuild")
 
@@ -51,7 +51,7 @@ func OpenFile(path string) (*sql.DB, error) {
 		return nil, err
 	}
 	f.Close()
-	db, err := sql.Open("sqlite", "file:"+path+"?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)")
+	db, err := sql.Open("sqlite", "file:"+path+"?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)&_pragma=secure_delete(ON)")
 	if err != nil {
 		return nil, needsRebuild(err)
 	}
@@ -61,7 +61,7 @@ func OpenFile(path string) (*sql.DB, error) {
 		db.Close()
 		return nil, needsRebuild(err)
 	}
-	if v != 0 && v != 1 {
+	if v > SchemaVersion {
 		db.Close()
 		return nil, ErrNeedsRebuild
 	}
@@ -69,7 +69,13 @@ func OpenFile(path string) (*sql.DB, error) {
 		db.Close()
 		return nil, needsRebuild(err)
 	}
-	if _, err := db.Exec("PRAGMA user_version=1"); err != nil {
+	if v != 0 && v < SchemaVersion {
+		if _, err := Reredact(db); err != nil {
+			db.Close()
+			return nil, err
+		}
+	}
+	if _, err := db.Exec(fmt.Sprintf("PRAGMA user_version=%d", SchemaVersion)); err != nil {
 		db.Close()
 		return nil, needsRebuild(err)
 	}
