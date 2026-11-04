@@ -43,11 +43,11 @@ func Reredact(db *sql.DB) (int, error) {
 	defer tx.Rollback()
 	changed := 0
 	for _, r := range all {
-		new := redact.Text(r.text)
-		if new == r.text {
+		redacted := redact.Text(r.text)
+		if redacted == r.text {
 			continue
 		}
-		if _, err := tx.Exec("UPDATE chunks SET text=? WHERE id=?", new, r.id); err != nil {
+		if _, err := tx.Exec("UPDATE chunks SET text=? WHERE id=?", redacted, r.id); err != nil {
 			return 0, err
 		}
 		changed++
