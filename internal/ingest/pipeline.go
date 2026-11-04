@@ -7,8 +7,11 @@ import (
 )
 
 // Process runs the fixed ingest pipeline on parsed messages:
-// drop forgotten -> DropSelfPoison -> redact.Text on every Text -> NormalizeProject on every
-// Project -> Window.
+// DropSelfPoison -> redact.Text and NormalizeProject on every message -> drop forgotten
+// sessions/projects -> Window.
+//
+// The caller has already checked the forgotten list via store.Open or store.Rebuild, so the
+// ignored error from store.LoadForgotten here is safe.
 func Process(msgs []model.Message, known map[string]bool) []model.Chunk {
 	if known == nil {
 		known = map[string]bool{}

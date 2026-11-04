@@ -41,6 +41,9 @@ func Open(dir string) (*sql.DB, error) {
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return nil, err
 	}
+	if _, _, err := LoadForgotten(dir); err != nil {
+		return nil, fmt.Errorf("forgotten list unreadable: %w", err)
+	}
 	return OpenFile(filepath.Join(dir, "index.sqlite"))
 }
 
