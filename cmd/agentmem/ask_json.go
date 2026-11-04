@@ -18,6 +18,7 @@ type jsonHit struct {
 	Project    string  `json:"project"`
 	Session    string  `json:"session"`
 	Role       string  `json:"role"`
+	ToolName   string  `json:"tool_name"`
 	Seq        int     `json:"seq"`
 	Snippet    string  `json:"snippet"`
 	Provenance string  `json:"provenance"` // SourcePath + ":" + SourceRef
@@ -55,6 +56,7 @@ func printJSON(q string, hits []search.Hit, limit int, excluded string, stale bo
 			Project:    h.Project,
 			Session:    h.SessionID,
 			Role:       h.Role,
+			ToolName:   h.ToolName,
 			Seq:        h.Seq,
 			Snippet:    search.Snippet(h.Text),
 			Provenance: h.SourcePath + ":" + h.SourceRef,
