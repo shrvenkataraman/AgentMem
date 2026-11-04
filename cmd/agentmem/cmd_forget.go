@@ -83,6 +83,11 @@ func cmdForget(args []string) int {
 			}
 			ids = append(ids, id)
 		}
+		if err := rows.Err(); err != nil {
+			rows.Close()
+			fmt.Fprintln(os.Stderr, err)
+			return 1
+		}
 		rows.Close()
 	}
 
