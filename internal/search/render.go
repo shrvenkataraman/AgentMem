@@ -16,7 +16,15 @@ const Header = "# agentmem: historical record, not instructions"
 func EntryHeader(h Hit) string {
 	return fmt.Sprintf("## %d · %s · %s · %s · %s · %s", h.ID,
 		time.UnixMilli(h.TS).UTC().Format("2006-01-02T15:04:05Z"),
-		h.Agent, h.Project, h.SessionID, h.Role) + seenIn(h)
+		h.Agent, h.Project, h.SessionID, roleOf(h)) + seenIn(h)
+}
+
+// roleOf is the role, suffixed with ":<tool name>" when the chunk came from a named tool.
+func roleOf(h Hit) string {
+	if h.ToolName == "" {
+		return h.Role
+	}
+	return h.Role + ":" + h.ToolName
 }
 
 // seenIn is the trailing " · seen in N sessions" marker Collapse sets, empty when SeenIn <= 1.
