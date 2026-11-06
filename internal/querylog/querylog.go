@@ -12,6 +12,7 @@ import (
 type Entry struct {
 	TS              string   `json:"ts"`
 	Agent           string   `json:"agent"`
+	SessionID       string   `json:"session_id"`
 	Project         string   `json:"project"`
 	Query           string   `json:"query"`
 	Hits            int      `json:"hits"`
