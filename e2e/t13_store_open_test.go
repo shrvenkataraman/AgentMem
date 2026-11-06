@@ -9,7 +9,7 @@ import (
 func TestT13_OpenCreatesIndex(t *testing.T) {
 	st := filepath.Join(t.TempDir(), "state")
 	s := jsonLines(t, ok(t, st, nil, "stats", "--json"))[0]
-	eq(t, "schema_version", s["schema_version"], 1)
+	eq(t, "schema_version", s["schema_version"], 2)
 	eq(t, "chunks", s["chunks"], 0)
 	di, err := os.Stat(st)
 	if err != nil {
@@ -22,7 +22,7 @@ func TestT13_OpenCreatesIndex(t *testing.T) {
 	}
 	eq(t, "file mode", fi.Mode().Perm(), os.FileMode(0o600))
 	db := openIdx(t, st)
-	eq(t, "user_version", count(t, db, "PRAGMA user_version"), 1)
+	eq(t, "user_version", count(t, db, "PRAGMA user_version"), 2)
 	var jm string
 	db.QueryRow("PRAGMA journal_mode").Scan(&jm)
 	eq(t, "journal_mode", jm, "wal")

@@ -1,2 +1,7 @@
 /bin/
-/.scratch/**/PROGRESS.md
+/.scratch/
+.env
+.env.*
+*.sqlite
+*.sqlite-*
+query-log.jsonl
