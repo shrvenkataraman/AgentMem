@@ -33,6 +33,11 @@ def main():
         if start == 0 or ms < start:
             start = ms
 
+    # Without a start time, every session in the index would count as measured.
+    if start == 0:
+        print("no data")
+        return
+
     db = sqlite3.connect("file:" + index_db + "?mode=ro", uri=True)
     sessions = {}
     for agent, count in db.execute(
