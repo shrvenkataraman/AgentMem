@@ -39,7 +39,11 @@ func maxBytes() int64 {
 // Append writes e as one JSON line to <dir>/query-log.jsonl (0600, appended). When the file has
 // already grown to AGENTMEM_QUERYLOG_MAX bytes it is renamed to query-log.jsonl.1 first. All
 // errors are ignored: a query log must never break or slow down an answer.
+// AGENTMEM_QUERYLOG=off disables it.
 func Append(dir string, e Entry) {
+	if os.Getenv("AGENTMEM_QUERYLOG") == "off" {
+		return // eval runs must not count as real asks
+	}
 	path := filepath.Join(dir, name)
 	if fi, err := os.Stat(path); err == nil && fi.Size() >= maxBytes() {
 		os.Rename(path, path+".1")
