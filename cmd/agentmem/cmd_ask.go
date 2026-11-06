@@ -91,11 +91,19 @@ func parseAsk(args []string) (o askOpts, err error) {
 	return o, nil
 }
 
-// logQuery records this answered question in the private query log. The agent is AGENTMEM_AGENT
-// (or "unknown"), the project is the normalized cwd, sources are the distinct agents of the
-// returned hits (never nil, so an empty result set logs []).
+// logQuery records this answered question in the private query log. The agent is AGENTMEM_AGENT,
+// else "claude" when CLAUDE_CODE_SESSION_ID is set, else "unknown"; the session is
+// AGENTMEM_SESSION, else CLAUDE_CODE_SESSION_ID, else "". The project is the normalized cwd,
+// sources are the distinct agents of the returned hits (never nil, so an empty result set logs []).
 func logQuery(o askOpts, hits []search.Hit) {
 	agent := os.Getenv("AGENTMEM_AGENT")
+	session := os.Getenv("AGENTMEM_SESSION")
+	if session == "" {
+		session = os.Getenv("CLAUDE_CODE_SESSION_ID")
+	}
+	if agent == "" && os.Getenv("CLAUDE_CODE_SESSION_ID") != "" {
+		agent = "claude"
+	}
 	if agent == "" {
 		agent = "unknown"
 	}
@@ -115,6 +123,7 @@ func logQuery(o askOpts, hits []search.Hit) {
 	querylog.Append(store.StateDir(), querylog.Entry{
 		TS:              time.Now().UTC().Format(time.RFC3339),
 		Agent:           agent,
+		SessionID:       session,
 		Project:         ingest.NormalizeProject(cwd),
 		Query:           o.query(),
 		Hits:            len(hits),
