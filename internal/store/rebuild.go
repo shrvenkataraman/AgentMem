@@ -156,7 +156,7 @@ func Rebuild(dir string, force bool, build func(db *sql.DB) error) (oldN, newN i
 // The returned release unlocks and closes the file. It errors with "ingest lock busy" when another
 // process holds it. The name is deliberately not TryLock: ticket 31 owns the exported
 // store.TryLock(dir, wait) in internal/store/lock.go, and two declarations of that name in one
-// package would not compile (PROGRESS.md defect I).
+// package would not compile.
 func TryIngestLock(dir string) (release func(), err error) {
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return nil, err

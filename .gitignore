@@ -5,3 +5,8 @@
 *.sqlite
 *.sqlite-*
 query-log.jsonl
+
+# Local notes stay out of the repository.
+*.md
+!/README.md
+!/vendor/**/*.md
